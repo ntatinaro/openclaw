@@ -9,6 +9,8 @@ import {
   resolveImplicitCopilotProvider,
   resolveImplicitProviders,
 } from "./models-config.providers.js";
+// Register Watsonx provider (side effect: registers API provider)
+import "../providers/watsonx-provider.js";
 
 type ModelsConfig = NonNullable<OpenClawConfig["models"]>;
 

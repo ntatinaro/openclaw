@@ -65,6 +65,50 @@ const QWEN_PORTAL_DEFAULT_COST = {
   cacheWrite: 0,
 };
 
+// Groq provider configuration (OpenAI-compatible)
+const GROQ_BASE_URL = "https://api.groq.com/openai/v1";
+const GROQ_DEFAULT_CONTEXT_WINDOW = 131072;
+const GROQ_DEFAULT_MAX_TOKENS = 8192;
+// Groq pricing per 1M tokens (as of 2024)
+const GROQ_LLAMA_70B_COST = {
+  input: 0.59,
+  output: 0.79,
+  cacheRead: 0,
+  cacheWrite: 0,
+};
+const GROQ_LLAMA_8B_COST = {
+  input: 0.05,
+  output: 0.08,
+  cacheRead: 0,
+  cacheWrite: 0,
+};
+const GROQ_MIXTRAL_COST = {
+  input: 0.24,
+  output: 0.24,
+  cacheRead: 0,
+  cacheWrite: 0,
+};
+
+// IBM Watsonx provider configuration
+const WATSONX_CLOUD_REGIONS: Record<string, string> = {
+  dallas: "https://us-south.ml.cloud.ibm.com",
+  frankfurt: "https://eu-de.ml.cloud.ibm.com",
+  london: "https://eu-gb.ml.cloud.ibm.com",
+  tokyo: "https://jp-tok.ml.cloud.ibm.com",
+  sydney: "https://au-syd.ml.cloud.ibm.com",
+  toronto: "https://ca-tor.ml.cloud.ibm.com",
+  mumbai: "https://ap-south-1.aws.wxai.ibm.com",
+};
+const WATSONX_DEFAULT_REGION = "dallas";
+const WATSONX_DEFAULT_CONTEXT_WINDOW = 8192;
+const WATSONX_DEFAULT_MAX_TOKENS = 4096;
+const WATSONX_DEFAULT_COST = {
+  input: 0,
+  output: 0,
+  cacheRead: 0,
+  cacheWrite: 0,
+};
+
 const OLLAMA_BASE_URL = "http://127.0.0.1:11434/v1";
 const OLLAMA_API_BASE_URL = "http://127.0.0.1:11434";
 const OLLAMA_DEFAULT_CONTEXT_WINDOW = 128000;
@@ -394,6 +438,129 @@ async function buildOllamaProvider(): Promise<ProviderConfig> {
   };
 }
 
+export function buildGroqProvider(): ProviderConfig {
+  return {
+    baseUrl: GROQ_BASE_URL,
+    api: "openai-completions",
+    models: [
+      {
+        id: "llama-3.3-70b-versatile",
+        name: "Llama 3.3 70B Versatile",
+        reasoning: false,
+        input: ["text"],
+        cost: GROQ_LLAMA_70B_COST,
+        contextWindow: GROQ_DEFAULT_CONTEXT_WINDOW,
+        maxTokens: GROQ_DEFAULT_MAX_TOKENS,
+      },
+      {
+        id: "llama-3.1-70b-versatile",
+        name: "Llama 3.1 70B Versatile",
+        reasoning: false,
+        input: ["text"],
+        cost: GROQ_LLAMA_70B_COST,
+        contextWindow: GROQ_DEFAULT_CONTEXT_WINDOW,
+        maxTokens: GROQ_DEFAULT_MAX_TOKENS,
+      },
+      {
+        id: "llama-3.1-8b-instant",
+        name: "Llama 3.1 8B Instant",
+        reasoning: false,
+        input: ["text"],
+        cost: GROQ_LLAMA_8B_COST,
+        contextWindow: GROQ_DEFAULT_CONTEXT_WINDOW,
+        maxTokens: GROQ_DEFAULT_MAX_TOKENS,
+      },
+      {
+        id: "mixtral-8x7b-32768",
+        name: "Mixtral 8x7B",
+        reasoning: false,
+        input: ["text"],
+        cost: GROQ_MIXTRAL_COST,
+        contextWindow: 32768,
+        maxTokens: GROQ_DEFAULT_MAX_TOKENS,
+      },
+      {
+        id: "gemma2-9b-it",
+        name: "Gemma 2 9B",
+        reasoning: false,
+        input: ["text"],
+        cost: GROQ_LLAMA_8B_COST, // Similar pricing tier
+        contextWindow: 8192,
+        maxTokens: GROQ_DEFAULT_MAX_TOKENS,
+      },
+    ],
+  };
+}
+
+export interface WatsonxProviderOptions {
+  /** IBM Cloud region (dallas, frankfurt, london, tokyo, sydney, toronto, mumbai) */
+  region?: string;
+  /** For on-prem: custom base URL (overrides region) */
+  baseUrl?: string;
+  /** IBM Cloud project ID (required for cloud) */
+  projectId?: string;
+}
+
+export function buildWatsonxProvider(options?: WatsonxProviderOptions): ProviderConfig {
+  const region = options?.region ?? WATSONX_DEFAULT_REGION;
+  const baseUrl =
+    options?.baseUrl ??
+    WATSONX_CLOUD_REGIONS[region] ??
+    WATSONX_CLOUD_REGIONS[WATSONX_DEFAULT_REGION];
+
+  return {
+    baseUrl,
+    api: "watsonx-generation",
+    models: [
+      {
+        id: "ibm/granite-3-8b-instruct",
+        name: "IBM Granite 3 8B Instruct",
+        reasoning: false,
+        input: ["text"],
+        cost: WATSONX_DEFAULT_COST,
+        contextWindow: WATSONX_DEFAULT_CONTEXT_WINDOW,
+        maxTokens: WATSONX_DEFAULT_MAX_TOKENS,
+      },
+      {
+        id: "ibm/granite-3-2b-instruct",
+        name: "IBM Granite 3 2B Instruct",
+        reasoning: false,
+        input: ["text"],
+        cost: WATSONX_DEFAULT_COST,
+        contextWindow: WATSONX_DEFAULT_CONTEXT_WINDOW,
+        maxTokens: WATSONX_DEFAULT_MAX_TOKENS,
+      },
+      {
+        id: "meta-llama/llama-3-70b-instruct",
+        name: "Meta Llama 3 70B Instruct",
+        reasoning: false,
+        input: ["text"],
+        cost: WATSONX_DEFAULT_COST,
+        contextWindow: WATSONX_DEFAULT_CONTEXT_WINDOW,
+        maxTokens: WATSONX_DEFAULT_MAX_TOKENS,
+      },
+      {
+        id: "meta-llama/llama-3-1-70b-instruct",
+        name: "Meta Llama 3.1 70B Instruct",
+        reasoning: false,
+        input: ["text"],
+        cost: WATSONX_DEFAULT_COST,
+        contextWindow: 128000,
+        maxTokens: WATSONX_DEFAULT_MAX_TOKENS,
+      },
+      {
+        id: "mistralai/mixtral-8x7b-instruct-v01",
+        name: "Mixtral 8x7B Instruct",
+        reasoning: false,
+        input: ["text"],
+        cost: WATSONX_DEFAULT_COST,
+        contextWindow: 32768,
+        maxTokens: WATSONX_DEFAULT_MAX_TOKENS,
+      },
+    ],
+  };
+}
+
 export async function resolveImplicitProviders(params: {
   agentDir: string;
 }): Promise<ModelsConfig["providers"]> {
@@ -459,6 +626,22 @@ export async function resolveImplicitProviders(params: {
     resolveApiKeyFromProfiles({ provider: "ollama", store: authStore });
   if (ollamaKey) {
     providers.ollama = { ...(await buildOllamaProvider()), apiKey: ollamaKey };
+  }
+
+  // Groq provider - auto-add if GROQ_API_KEY is set
+  const groqKey =
+    resolveEnvApiKeyVarName("groq") ??
+    resolveApiKeyFromProfiles({ provider: "groq", store: authStore });
+  if (groqKey) {
+    providers.groq = { ...buildGroqProvider(), apiKey: groqKey };
+  }
+
+  // IBM Watsonx provider - auto-add if WATSONX_API_KEY is set
+  const watsonxKey =
+    resolveEnvApiKeyVarName("watsonx") ??
+    resolveApiKeyFromProfiles({ provider: "watsonx", store: authStore });
+  if (watsonxKey) {
+    providers.watsonx = { ...buildWatsonxProvider(), apiKey: watsonxKey };
   }
 
   return providers;
